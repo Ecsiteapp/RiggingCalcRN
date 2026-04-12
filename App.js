@@ -1,20 +1,17 @@
-import { StatusBar } from 'expo-status-bar';
-import { StyleSheet, Text, View } from 'react-native';
+import React, { useState } from 'react'
+import { SafeAreaProvider } from 'react-native-safe-area-context'
+import LoginScreen from './src/LoginScreen'
+import CalculatorScreen from './src/CalculatorScreen'
 
 export default function App() {
-  return (
-    <View style={styles.container}>
-      <Text>Open up App.js to start working on your app!</Text>
-      <StatusBar style="auto" />
-    </View>
-  );
-}
+  const [loggedIn, setLoggedIn] = useState(false)
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#fff',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-});
+  return (
+    <SafeAreaProvider>
+      {loggedIn
+        ? <CalculatorScreen onLogout={() => setLoggedIn(false)} />
+        : <LoginScreen onLogin={() => setLoggedIn(true)} />
+      }
+    </SafeAreaProvider>
+  )
+}
