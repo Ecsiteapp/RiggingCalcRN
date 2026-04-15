@@ -1,9 +1,106 @@
 import React from 'react'
 import { View, StyleSheet } from 'react-native'
 import Svg, {
-  Line, Circle, Rect, Polygon, Text as SvgText, G,
+  Line, Circle, Rect, Polygon, Text as SvgText, G, Path, Ellipse,
 } from 'react-native-svg'
 import { colors } from './theme'
+
+/** Truss tower from deck to headblock — goalpost + X-bracing */
+function TowerStructure({ hbX, hbY, floorY }) {
+  const xL = hbX - 16
+  const xR = hbX + 16
+  const topY = hbY - 10
+  const h = topY - floorY
+  const y1 = floorY + h * 0.33
+  const y2 = floorY + h * 0.66
+  const steel = '#5b6578'
+  const steelDim = '#3d4654'
+  const steelHi = '#7c8aa0'
+
+  return (
+    <G opacity={0.95}>
+      {/* Base / sill */}
+      <Rect x={xL - 4} y={floorY - 2} width={xR - xL + 8} height={4} rx={1}
+        fill="#2a3344" stroke={steel} strokeWidth="1" />
+      {/* Main legs */}
+      <Line x1={xL} y1={floorY} x2={xL} y2={topY} stroke={steel} strokeWidth="3" strokeLinecap="square" />
+      <Line x1={xR} y1={floorY} x2={xR} y2={topY} stroke={steel} strokeWidth="3" strokeLinecap="square" />
+      {/* Inner verticals (ladder frame) */}
+      <Line x1={hbX - 5} y1={floorY + 6} x2={hbX - 5} y2={topY - 2}
+        stroke={steelDim} strokeWidth="1.2" />
+      <Line x1={hbX + 5} y1={floorY + 6} x2={hbX + 5} y2={topY - 2}
+        stroke={steelDim} strokeWidth="1.2" />
+      {/* X-bracing */}
+      <Line x1={xL} y1={floorY + 4} x2={xR} y2={y2} stroke={steelDim} strokeWidth="1.2" />
+      <Line x1={xR} y1={floorY + 4} x2={xL} y2={y2} stroke={steelDim} strokeWidth="1.2" />
+      <Line x1={xL} y1={y1} x2={xR} y2={topY - 2} stroke={steelDim} strokeWidth="1.2" />
+      <Line x1={xR} y1={y1} x2={xL} y2={topY - 2} stroke={steelDim} strokeWidth="1.2" />
+      {/* Top chord / beam */}
+      <Line x1={xL - 2} y1={topY} x2={xR + 2} y2={topY} stroke={steelHi} strokeWidth="2.5" strokeLinecap="round" />
+      {/* Small gusset plates */}
+      <Rect x={xL - 3} y={topY - 4} width={6} height={6} fill="#1e2838" stroke={steel} strokeWidth="0.8" />
+      <Rect x={xR - 3} y={topY - 4} width={6} height={6} fill="#1e2838" stroke={steel} strokeWidth="0.8" />
+    </G>
+  )
+}
+
+/**
+ * Rolling chain-hoist motor (deck rig). Rope attaches at (ax, ay) — graphic sits under
+ * that point when there is vertical room; otherwise offset sideways so lines stay exact.
+ */
+function HoistTruck({ ax, ay, floorY }) {
+  const gold = '#fbbf24'
+  const body = '#3f4f64'
+  const rim = '#94a3b8'
+  const roomBelow = floorY - ay - 6
+  const cramped = roomBelow < 14
+
+  if (!cramped) {
+    const sheaveR = 4
+    const wheelY = floorY - 2
+    const wxL = ax - 10
+    const wxR = ax + 10
+    const wheelR = 2.8
+    const bodyTop = ay + sheaveR + 1
+    const railY = wheelY - 5
+    return (
+      <G>
+        <Circle cx={ax} cy={ay} r={sheaveR} fill="#0f172a" stroke={gold} strokeWidth="1.5" />
+        <Rect x={ax - 10} y={bodyTop} width={20} height={Math.max(8, railY - bodyTop)} rx={2}
+          fill={body} stroke={gold} strokeWidth="1" />
+        <Rect x={ax - 8} y={bodyTop + 3} width={16} height={3} rx={0.5} fill={gold} opacity={0.28} />
+        <Rect x={ax - 12} y={railY} width={24} height={4} rx={1} fill="#2a3548" stroke="#4b5568" strokeWidth="0.8" />
+        <Ellipse cx={wxL} cy={wheelY} rx={wheelR} ry={wheelR * 0.85} fill="#1a1f2e" stroke={rim} strokeWidth="1" />
+        <Ellipse cx={wxR} cy={wheelY} rx={wheelR} ry={wheelR * 0.85} fill="#1a1f2e" stroke={rim} strokeWidth="1" />
+        <SvgText x={ax + 12} y={ay + 4} fill={gold} fontSize="9">H</SvgText>
+      </G>
+    )
+  }
+
+  /* Deck-level hoist: draw truck to the side so (ax,ay) stays the true line anchor */
+  const ox = ax + 14
+  const deck = floorY
+  const wheelY = deck - 1
+  const motorTop = deck - 26
+  return (
+    <G>
+      <Path
+        d={`M ${ax} ${ay} L ${ox} ${motorTop + 2}`}
+        stroke={gold}
+        strokeWidth="1.2"
+        strokeDasharray="2 2"
+        opacity={0.45}
+      />
+      <Ellipse cx={ox - 8} cy={wheelY} rx={2.8} ry={2.5} fill="#1a1f2e" stroke={rim} strokeWidth="0.9" />
+      <Ellipse cx={ox + 8} cy={wheelY} rx={2.8} ry={2.5} fill="#1a1f2e" stroke={rim} strokeWidth="0.9" />
+      <Rect x={ox - 12} y={deck - 12} width={24} height={5} rx={1} fill="#2a3548" stroke="#4b5568" strokeWidth="0.8" />
+      <Rect x={ox - 10} y={motorTop} width={20} height={16} rx={2} fill={body} stroke={gold} strokeWidth="1.1" />
+      <Rect x={ox - 8} y={motorTop + 4} width={16} height={3} rx={0.5} fill={gold} opacity={0.32} />
+      <Circle cx={ox} cy={motorTop - 1} r={3} fill="#0f172a" stroke={gold} strokeWidth="1" />
+      <SvgText x={ox + 12} y={motorTop + 8} fill={gold} fontSize="9">H</SvgText>
+    </G>
+  )
+}
 
 export default function RiggingDiagram({ inputs, results: R, withFootblock }) {
   const H         = parseFloat(inputs.headblockHeight)  || 0
@@ -59,14 +156,23 @@ export default function RiggingDiagram({ inputs, results: R, withFootblock }) {
     <View style={s.wrap}>
       <Svg width="100%" height={VH} viewBox={`0 0 ${VW} ${VH}`}>
 
-        {/* Grid ceiling */}
-        <Line x1={ML - 8} y1={hbY - 6} x2={hbX + 46} y2={hbY - 6}
-          stroke="#1e3a5f" strokeWidth="2.5" />
+        {/* Grid / batten — parent beam + secondary */}
+        <G opacity={0.9}>
+          <Line x1={ML - 8} y1={hbY - 14} x2={hbX + 50} y2={hbY - 14}
+            stroke="#1e3a5f" strokeWidth="3" strokeLinecap="round" />
+          <Line x1={ML - 4} y1={hbY - 8} x2={hbX + 44} y2={hbY - 8}
+            stroke="#2d4a6f" strokeWidth="1.5" />
+          <Line x1={hbX - 2} y1={hbY - 18} x2={hbX + 2} y2={hbY - 4}
+            stroke="#3d5a7a" strokeWidth="2" strokeLinecap="round" />
+        </G>
 
         {/* Floor */}
         <Line x1={ML - 8} y1={floorY} x2={VW - MR + 5} y2={floorY}
           stroke="#334155" strokeWidth="2" />
         {hatchMarks}
+
+        {/* Tower (goalpost truss) — behind rigging lines */}
+        <TowerStructure hbX={hbX} hbY={hbY} floorY={floorY} />
 
         {/* Vertical reference dashed */}
         <Line x1={hbX} y1={hbY} x2={hbX} y2={floorY}
@@ -105,13 +211,9 @@ export default function RiggingDiagram({ inputs, results: R, withFootblock }) {
           </G>
         )}
 
-        {/* Hoist marker */}
+        {/* Hoist — rolling motor / chain hoist */}
         {hoistDist > 0 && (
-          <G>
-            <Rect x={hoistX - 5} y={hoistY - 5} width="10" height="10" rx="2"
-              fill="#0f172a" stroke="#fbbf24" strokeWidth="1.5" />
-            <SvgText x={hoistX + 8} y={hoistY + 3} fill="#fbbf24" fontSize="9">H</SvgText>
-          </G>
+          <HoistTruck ax={hoistX} ay={hoistY} floorY={floorY} />
         )}
 
         {/* Headblock pulley */}
